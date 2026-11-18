@@ -17,3 +17,15 @@ The documented rules are the reference for implementing and testing the model. A
 ## Stack and current submission
 
 Java 21, Maven, and JUnit 5. The game logic must run and be testable without JavaFX. The academic submission window is **November 21–24, 2026**.
+
+## Build and verification
+
+Install JDK 21 and Maven 3.6.3 or newer, and ensure `JAVA_HOME` points to the JDK. Check the active versions with `java -version` and `mvn -version`. Maven downloads the project dependencies and plugins on the first build.
+
+```sh
+mvn test             # Compile and run the JUnit 5 tests
+mvn clean test       # Repeat the verification from a clean build
+mvn javadoc:javadoc  # Generate documentation in target/site/apidocs
+```
+
+Production code belongs in `src/main/java` and tests in `src/test/java`. The model packages separate configuration, game state, events, rules, and results. There is no JavaFX application in this submission.
