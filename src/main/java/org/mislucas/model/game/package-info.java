@@ -1,4 +1,4 @@
 /**
  * Game state and its progression.
  */
-package org.mislucas.game;
+package org.mislucas.model.game;

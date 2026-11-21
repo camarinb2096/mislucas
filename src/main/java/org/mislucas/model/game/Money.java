@@ -1,4 +1,4 @@
-package org.mislucas.game;
+package org.mislucas.model.game;
 
 /**
  * An amount of money expressed in whole Colombian pesos.

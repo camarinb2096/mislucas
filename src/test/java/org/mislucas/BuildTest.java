@@ -3,7 +3,7 @@ package org.mislucas;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.Test;
-import org.mislucas.config.GameParameters;
+import org.mislucas.model.config.GameParameters;
 
 class BuildTest {
     @Test
