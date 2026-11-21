@@ -6,6 +6,8 @@ These rules are the reference for the model and its tests. Amounts are **simulat
 
 All jars start at COP 0. Store balances as integer pesos; no jar may become negative. Income allocations must be in increments of COP 1,000. Returns and installments may leave jar balances that are not multiples of COP 1,000.
 
+Jar deposits and withdrawals accept nonnegative whole pesos. A withdrawal can equal the full available balance. Reject a withdrawal above the available balance and leave the balance unchanged.
+
 | Scenario | Weekly allowance | Fixed expense in weeks 1 and 5 | Headphones | Sneakers | Class trip |
 |---|---:|---:|---:|---:|---:|
 | Tight (*Ajustado*) | COP 10,000 | COP 6,000 | COP 40,000 | COP 60,000 | COP 80,000 |
