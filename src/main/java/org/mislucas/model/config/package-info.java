@@ -1,4 +1,4 @@
 /**
  * Game configuration, including scenarios and goals.
  */
-package org.mislucas.config;
+package org.mislucas.model.config;

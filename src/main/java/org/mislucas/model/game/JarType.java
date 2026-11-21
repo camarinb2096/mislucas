@@ -1,4 +1,4 @@
-package org.mislucas.game;
+package org.mislucas.model.game;
 
 /**
  * Identifies each of the three jars in a game.

@@ -2,11 +2,11 @@
 
 ## Project Structure & Module Organization
 
-This repository currently contains the project overview in `README.md` and the game specification in `docs/`. Read `docs/game.md`, `docs/rules.md`, and `docs/model.md` before changing behavior. The planned single Maven module should place production Java in `src/main/java`, JUnit tests in `src/test/java`, and future JavaFX assets in `src/main/resources`. Keep financial rules in the model; the JavaFX interface belongs to the third submission.
+The repository contains the project overview in `README.md` and the game specification in `docs/`. Read `docs/game.md`, `docs/rules.md`, and `docs/model.md` before changing behavior. The single Maven module places production Java in `src/main/java` and JUnit tests in `src/test/java`. Place game state and financial rules under `org.mislucas.model` and mirror its packages in domain tests. The third submission adds JavaFX views and controllers, with assets in `src/main/resources`.
 
 ## Build, Test, and Development Commands
 
-The Maven project has not been scaffolded yet, so these commands apply after `pom.xml` is added:
+Use the following commands from the Maven module root.
 
 - `mvn test` — compile the model and run JUnit 5 tests.
 - `mvn clean test` — verify the project from a clean build.
