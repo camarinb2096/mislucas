@@ -18,6 +18,10 @@ The documented rules are the reference for implementing and testing the model. A
 
 Java 21, Maven, and JUnit 5. The game logic must run and be testable without JavaFX. The academic submission window is **November 21–24, 2026**.
 
+## Architecture
+
+Mis Lucas uses a single Maven module. The second submission implements the model in `org.mislucas.model`, with subpackages for configuration, game state, events, rules, and results. The third submission will complete the Model–View–Controller (MVC) structure with JavaFX. Controllers will pass player actions to the model, and views will display the resulting state and feedback. The model owns the game rules and can be tested independently of JavaFX. See the [model design](docs/model.md) for package responsibilities.
+
 ## Build and verification
 
 Install JDK 21 and Maven 3.6.3 or newer, and ensure `JAVA_HOME` points to the JDK. Check the active versions with `java -version` and `mvn -version`. Maven downloads the project dependencies and plugins on the first build.
@@ -28,4 +32,4 @@ mvn clean test       # Repeat the verification from a clean build
 mvn javadoc:javadoc  # Generate documentation in target/site/apidocs
 ```
 
-Production code belongs in `src/main/java` and tests in `src/test/java`. The domain lives under `org.mislucas.model`, with subpackages for configuration, game state, events, rules, and results. The third submission will add JavaFX views and controllers that use the domain model.
+Production code belongs in `src/main/java` and tests in `src/test/java`.
