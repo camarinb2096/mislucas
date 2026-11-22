@@ -2,6 +2,22 @@
 
 The second submission implements the game domain as **one Maven module using Java 21**, with JUnit 5 tests. Domain classes do not import JavaFX. The third submission's interface will call model operations and display their results.
 
+## Package structure
+
+The domain lives under `org.mislucas.model`. Domain tests use corresponding packages under `src/test/java`.
+
+| Subpackage | Responsibility |
+|---|---|
+| `config` | Game parameters, resource scenarios, and savings goals. |
+| `game` | Game state, turn progression, jars, and money. |
+| `events` | Cards and their effects. |
+| `rules` | Coordination of financial rules such as allocation, payments, and returns. |
+| `result` | The completed game's outcome and indicators. |
+
+The third submission applies Model–View–Controller (MVC) to the JavaFX interface. Classes in `org.mislucas.controller` will translate player actions into model calls. Screens in `org.mislucas.view` will render the resulting state and feedback. The model owns the game rules and can run independently of JavaFX.
+
+## Domain responsibilities
+
 | Element | Responsibility |
 |---|---|
 | `Scenario` and `Goal` | Provide the allowance, fixed expense, and selected goal price. |
@@ -12,7 +28,7 @@ The second submission implements the game domain as **one Maven module using Jav
 | `RulesEngine` | Coordinate allocation, payment priorities, installment collection, returns, and closing without depending on the interface. |
 | `GameResult` | Expose balances, remaining debt, net balance, victory, stars, and savings percentage. |
 
-The player is an actor, so no account or authentication class is needed. A JavaFX controller may be added in the third submission; it must not duplicate financial calculations.
+The player is an actor, so no account or authentication class is needed.
 
 ## Invariants and test seams
 

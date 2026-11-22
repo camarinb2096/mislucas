@@ -1,4 +1,4 @@
-package org.mislucas.config;
+package org.mislucas.model.config;
 
 /**
  * Fixed parameters shared by the game model.
