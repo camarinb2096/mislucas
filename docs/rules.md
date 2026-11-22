@@ -29,7 +29,7 @@ The Normal deck contains one card per week. Shuffle it once at game start and do
 
 ## Weekly sequence
 
-1. Grant the weekly allowance and allocate **all of it** among the Spending (*Para gastar*), Goal (*Mi meta*), and Cushion (*Colchón*) jars. Reject negative amounts, an incorrect total, or allocations outside COP 1,000 increments.
+1. Grant the weekly allowance and allocate **all of it** among the Spending (*Para gastar*), Goal (*Mi meta*), and Cushion (*Colchón*) jars. Validate all three allocations before crediting any jar. Reject negative amounts, an incorrect total, or allocations outside COP 1,000 increments. If an allocation is rejected, every jar keeps its previous balance. Apply these same rules to opportunity income.
 2. Collect installments due this week after allocation and before other expenses, using Spending → Cushion → Goal. Collect overdue installments first. Any unpaid part remains due without extra interest.
 3. Charge the fixed expense only in weeks 1 and 5. Finance any mandatory shortfall.
 4. Reveal and resolve one card. A want is bought only if the player accepts and Spending has enough money; it never creates debt. A need or fixed expense uses Spending → Cushion → Goal. An emergency uses Cushion → Spending → Goal. Finance mandatory shortfalls. Allocate opportunity income immediately as a new income. A quiet-week card has no direct effect.
