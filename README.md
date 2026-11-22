@@ -28,4 +28,4 @@ mvn clean test       # Repeat the verification from a clean build
 mvn javadoc:javadoc  # Generate documentation in target/site/apidocs
 ```
 
-Production code belongs in `src/main/java` and tests in `src/test/java`. The model packages separate configuration, game state, events, rules, and results. There is no JavaFX application in this submission.
+Production code belongs in `src/main/java` and tests in `src/test/java`. The domain lives under `org.mislucas.model`, with subpackages for configuration, game state, events, rules, and results. The third submission will add JavaFX views and controllers that use the domain model.
