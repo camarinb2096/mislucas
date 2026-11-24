@@ -22,6 +22,62 @@ Java 21, Maven, and JUnit 5. The game logic must run and be testable without Jav
 
 Mis Lucas uses a single Maven module. The second submission implements the model in `org.mislucas.model`, with subpackages for configuration, game state, events, rules, and results. The third submission will complete the Model–View–Controller (MVC) structure with JavaFX. Controllers will pass player actions to the model, and views will display the resulting state and feedback. The model owns the game rules and can be tested independently of JavaFX. See the [model design](docs/model.md) for package responsibilities.
 
+## Game diagrams
+
+### Game flow
+
+The game design covers setup, eight weekly turns, and the final result. The [business rules](docs/rules.md) specify payment order, credit, returns, and scoring.
+
+```mermaid
+flowchart TD
+    Setup["Choose a scenario and savings goal"]
+    Start["Start with empty jars and shuffle the Normal deck"]
+    Allowance["Receive and allocate the weekly allowance"]
+    Payments["Collect due installments"]
+    Fixed["Charge the fixed expense in weeks 1 and 5"]
+    Card{"Reveal one card"}
+    Opportunity["Allocate the extra income immediately"]
+    Effect["Resolve the card effect"]
+    Returns["Credit Goal and Cushion returns in weeks 4 and 8"]
+    Summary["Review the weekly summary"]
+    LastWeek{"End of week 8?"}
+    Result["Settle debt from Goal and show the result"]
+
+    Setup --> Start --> Allowance --> Payments --> Fixed --> Card
+    Card -->|Opportunity| Opportunity --> Returns
+    Card -->|Other card| Effect --> Returns
+    Returns --> Summary --> LastWeek
+    LastWeek -->|No, next week| Allowance
+    LastWeek -->|Yes| Result
+```
+
+### Income allocation sequence
+
+`IncomeAllocation` implements the same allocation rule for the weekly allowance and opportunity income. Each amount uses whole pesos, and all three jar balances stay unchanged if validation fails.
+
+```mermaid
+sequenceDiagram
+    participant C as Caller
+    participant A as IncomeAllocation
+    participant J as Three jars
+
+    C->>A: apply(income, spending, goal, cushion)
+    A->>A: Validate COP 1,000 increments and exact total
+    alt Invalid increment or total
+        A-->>C: Reject the allocation
+    else Valid amounts
+        A->>J: Read the three current balances
+        J-->>A: Current balances
+        A->>A: Check each projected balance
+        alt Any balance exceeds the integer range
+            A-->>C: Reject the allocation
+        else All balances fit
+            A->>J: Deposit each amount in its jar
+            A-->>C: Allocation complete
+        end
+    end
+```
+
 ## Build and verification
 
 Install JDK 21 and Maven 3.6.3 or newer, and ensure `JAVA_HOME` points to the JDK. Check the active versions with `java -version` and `mvn -version`. Maven downloads the project dependencies and plugins on the first build.
