@@ -36,6 +36,8 @@ The Normal deck contains one card per week. Shuffle it once at game start and do
 5. In weeks 4 and 8, credit Goal and Cushion with a return of 2% of each jar's balance, rounded **separately for each jar** to the nearest COP 100; round a tie upward. Spending earns no return.
 6. Show balances, debt, and an explanation of the week's events. Close the game after week 8; no further turns are allowed.
 
+The turn model starts in week 1. It accepts one successful allowance allocation, followed by one card reveal and then a request to close the week. A rejected action preserves the phase, week, and jar balances. Closing weeks 1 through 7 starts the next week, and closing week 8 ends the game. The current turn model uses the Normal deck's table order. Shuffling and applying card effects are tracked in T09.
+
 ## Educational credit
 
 When a fixed expense, need, or emergency creates a shortfall, the player chooses:
