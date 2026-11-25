@@ -17,6 +17,7 @@ import org.mislucas.model.rules.Debt;
 import org.mislucas.model.rules.ExpensePayment;
 import org.mislucas.model.rules.IncomeAllocation;
 import org.mislucas.model.rules.MandatoryPayment;
+import org.mislucas.model.rules.ReturnCredit;
 
 /**
  * Owns the state of an eight-week game and controls the order of turn actions.
@@ -49,6 +50,11 @@ public final class Game {
      * The debts and installment schedule associated with this game's jars.
      */
     private final CreditAccount creditAccount = new CreditAccount(expensePayment);
+
+    /**
+     * The rule that credits and records returns for this game's savings jars.
+     */
+    private final ReturnCredit returnCredit = new ReturnCredit(goalJar, cushion);
 
     /**
      * The unpaid portion of the current mandatory expense awaiting financing.
@@ -175,6 +181,15 @@ public final class Game {
      */
     public Money outstandingDebt() {
         return creditAccount.outstandingBalance();
+    }
+
+    /**
+     * Returns the accumulated credits from both savings jars.
+     *
+     * @return the total return credited in whole pesos
+     */
+    public Money totalReturns() {
+        return returnCredit.total();
     }
 
     /**
@@ -310,12 +325,15 @@ public final class Game {
     }
 
     /**
-     * Closes the current week. The last week completes the game.
+     * Credits scheduled returns and closes the current week.
+     * The last week completes the game.
      *
      * @throws IllegalStateException if the game is not ready to close the week
+     * @throws ArithmeticException if a credited balance or the total return exceeds the integer range
      */
     public void finishWeek() {
         requirePhase(GamePhase.AWAITING_WEEK_END);
+        returnCredit.apply(week);
         if (week == GameParameters.WEEKS_PER_GAME) {
             phase = GamePhase.FINISHED;
         } else {
