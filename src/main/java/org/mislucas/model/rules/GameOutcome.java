@@ -11,6 +11,7 @@ import org.mislucas.model.result.GameResult;
  * Calculates the final result from balances after debt settlement.
  */
 public final class GameOutcome {
+    /** Prevents instantiation of this calculation utility. */
     private GameOutcome() {
     }
 
