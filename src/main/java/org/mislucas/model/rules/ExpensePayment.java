@@ -90,6 +90,16 @@ public final class ExpensePayment {
     }
 
     /**
+     * Collects an installment using Spending, Cushion, then Goal.
+     *
+     * @param amount the amount still due
+     * @return the unpaid amount and the amount drawn from Goal
+     */
+    MandatoryPayment payInstallment(Money amount) {
+        return payMandatory(amount, spending, cushion);
+    }
+
+    /**
      * Pays an emergency using Cushion, Spending, then Goal.
      *
      * @param amount the cost of the emergency
