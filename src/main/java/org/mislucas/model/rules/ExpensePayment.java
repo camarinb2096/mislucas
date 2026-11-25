@@ -47,6 +47,20 @@ public final class ExpensePayment {
     }
 
     /**
+     * Checks whether the game schedules a fixed expense for this week.
+     *
+     * @param week the current game week
+     * @return true for weeks 1 and 5
+     * @throws IllegalArgumentException if the week is outside the game
+     */
+    public static boolean isFixedExpenseDue(int week) {
+        if (week < 1 || week > GameParameters.WEEKS_PER_GAME) {
+            throw new IllegalArgumentException("Week must be within the game.");
+        }
+        return week == 1 || week == 5;
+    }
+
+    /**
      * Charges the fixed expense in weeks 1 and 5 using Spending, Cushion, then Goal.
      *
      * @param week the current game week
@@ -56,11 +70,9 @@ public final class ExpensePayment {
      * @throws NullPointerException if the amount is null
      */
     public MandatoryPayment chargeFixedExpense(int week, Money amount) {
-        if (week < 1 || week > GameParameters.WEEKS_PER_GAME) {
-            throw new IllegalArgumentException("Week must be within the game.");
-        }
+        boolean due = isFixedExpenseDue(week);
         Objects.requireNonNull(amount, "amount");
-        if (week == 1 || week == 5) {
+        if (due) {
             return payMandatory(amount, spending, cushion);
         }
         return new MandatoryPayment(new Money(0), new Money(0));

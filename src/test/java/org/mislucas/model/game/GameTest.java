@@ -22,9 +22,10 @@ class GameTest {
     }
 
     @Test
-    void rejectsRevealAndWeekEndBeforeAllocation() {
+    void rejectsTurnActionsBeforeAllocation() {
         Game game = new Game(Scenario.TIGHT, Goal.HEADPHONES);
 
+        assertThrows(IllegalStateException.class, game::chargeFixedExpense);
         assertThrows(IllegalStateException.class, game::revealCard);
         assertThrows(IllegalStateException.class, game::finishWeek);
 
@@ -45,8 +46,10 @@ class GameTest {
 
         game.allocateAllowance(new Money(8_000), new Money(7_000), new Money(5_000));
 
-        assertEquals(GamePhase.AWAITING_CARD, game.phase());
+        assertEquals(GamePhase.AWAITING_FIXED_EXPENSE, game.phase());
         assertBalances(game, 8_000, 7_000, 5_000);
+        assertEquals(new Money(0), game.chargeFixedExpense().shortfall());
+        assertBalances(game, 0, 7_000, 1_000);
         assertEquals(10_000, game.revealCard().getAmount());
     }
 
@@ -54,13 +57,34 @@ class GameTest {
     void rejectsASecondAllocationAndRequiresACardBeforeClosingTheWeek() {
         Game game = new Game(Scenario.TIGHT, Goal.SNEAKERS);
         allocateTightAllowance(game);
+        game.chargeFixedExpense();
 
         assertThrows(IllegalStateException.class, () -> allocateTightAllowance(game));
         assertThrows(IllegalStateException.class, game::finishWeek);
 
         assertEquals(1, game.week());
         assertEquals(GamePhase.AWAITING_CARD, game.phase());
-        assertBalances(game, 5_000, 3_000, 2_000);
+        assertBalances(game, 0, 3_000, 1_000);
+        assertEquals(CardKind.WANT_1, game.revealCard().getKind());
+    }
+
+    @Test
+    void requiresTheFixedExpenseBeforeRevealAndRejectsASecondCharge() {
+        Game game = new Game(Scenario.TIGHT, Goal.HEADPHONES);
+        game.allocateAllowance(new Money(1_000), new Money(7_000), new Money(2_000));
+
+        assertThrows(IllegalStateException.class, game::revealCard);
+        assertEquals(GamePhase.AWAITING_FIXED_EXPENSE, game.phase());
+        assertBalances(game, 1_000, 7_000, 2_000);
+
+        var payment = game.chargeFixedExpense();
+
+        assertEquals(new Money(0), payment.shortfall());
+        assertEquals(new Money(3_000), payment.paidFromGoal());
+        assertEquals(GamePhase.AWAITING_CARD, game.phase());
+        assertThrows(IllegalStateException.class, game::chargeFixedExpense);
+        assertEquals(1, game.week());
+        assertBalances(game, 0, 4_000, 0);
         assertEquals(CardKind.WANT_1, game.revealCard().getKind());
     }
 
@@ -68,13 +92,14 @@ class GameTest {
     void rejectsASecondRevealWithoutConsumingTheNextCard() {
         Game game = new Game(Scenario.TIGHT, Goal.HEADPHONES);
         allocateTightAllowance(game);
+        game.chargeFixedExpense();
         game.revealCard();
 
         assertThrows(IllegalStateException.class, game::revealCard);
 
         assertEquals(1, game.week());
         assertEquals(GamePhase.AWAITING_WEEK_END, game.phase());
-        assertBalances(game, 5_000, 3_000, 2_000);
+        assertBalances(game, 0, 3_000, 1_000);
         game.finishWeek();
         allocateTightAllowance(game);
         assertEquals(CardKind.WANT_2, game.revealCard().getKind());
@@ -91,6 +116,13 @@ class GameTest {
             assertEquals(week, game.week());
             assertEquals(GamePhase.AWAITING_ALLOCATION, game.phase());
             allocateTightAllowance(game);
+            if (week == 1 || week == 5) {
+                assertEquals(GamePhase.AWAITING_FIXED_EXPENSE, game.phase());
+                game.chargeFixedExpense();
+            } else {
+                assertThrows(IllegalStateException.class, game::chargeFixedExpense);
+            }
+            assertEquals(GamePhase.AWAITING_CARD, game.phase());
             assertEquals(expectedCards.get(week - 1), game.revealCard().getKind());
             assertEquals(GamePhase.AWAITING_WEEK_END, game.phase());
             game.finishWeek();
@@ -98,14 +130,15 @@ class GameTest {
 
         assertEquals(8, game.week());
         assertEquals(GamePhase.FINISHED, game.phase());
-        assertBalances(game, 40_000, 24_000, 16_000);
+        assertBalances(game, 29_000, 24_000, 15_000);
 
         assertThrows(IllegalStateException.class, () -> allocateTightAllowance(game));
+        assertThrows(IllegalStateException.class, game::chargeFixedExpense);
         assertThrows(IllegalStateException.class, game::revealCard);
         assertThrows(IllegalStateException.class, game::finishWeek);
         assertEquals(8, game.week());
         assertEquals(GamePhase.FINISHED, game.phase());
-        assertBalances(game, 40_000, 24_000, 16_000);
+        assertBalances(game, 29_000, 24_000, 15_000);
     }
 
     private static void allocateTightAllowance(Game game) {
