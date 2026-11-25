@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Stream;
 import org.mislucas.model.config.GameParameters;
 import org.mislucas.model.game.Money;
 
@@ -78,10 +79,8 @@ public final class CreditAccount {
      */
     public Money collectDueInstallments(int week) {
         requireGameWeek(week);
-        List<Installment> due = debts.stream()
-                .flatMap(debt -> debt.installments().stream())
-                .filter(installment -> isDue(installment, week))
-                .sorted(Comparator.comparingInt(Installment::dueWeek))
+        List<Installment> due = outstandingInstallmentsInDueOrder()
+                .filter(installment -> installment.dueWeek() <= week)
                 .toList();
 
         int paidFromGoal = 0;
@@ -97,6 +96,27 @@ public final class CreditAccount {
     }
 
     /**
+     * Settles outstanding installments from Goal after the last weekly return.
+     * Installments due after the last week are included.
+     *
+     * @return the total amount withdrawn from Goal
+     */
+    public Money settleFromGoal() {
+        int paidFromGoal = 0;
+        for (Installment installment : outstandingInstallmentsInDueOrder().toList()) {
+            Money remaining = installment.remaining();
+            int paid = expensePayment.settleFromGoal(remaining);
+            int unpaid = remaining.pesos() - paid;
+            installment.retainUnpaid(new Money(unpaid));
+            paidFromGoal += paid;
+            if (unpaid > 0) {
+                break;
+            }
+        }
+        return new Money(paidFromGoal);
+    }
+
+    /**
      * Returns the balance of all outstanding debt, including installments due
      * after the last game week.
      *
@@ -104,6 +124,18 @@ public final class CreditAccount {
      */
     public Money outstandingBalance() {
         return new Money(debts.stream().mapToInt(debt -> debt.outstandingBalance().pesos()).sum());
+    }
+
+    /**
+     * Returns unpaid installments with the earliest due week first.
+     *
+     * @return the unpaid installments in collection order
+     */
+    private Stream<Installment> outstandingInstallmentsInDueOrder() {
+        return debts.stream()
+                .flatMap(debt -> debt.installments().stream())
+                .filter(installment -> installment.remaining().pesos() > 0)
+                .sorted(Comparator.comparingInt(Installment::dueWeek));
     }
 
     /**
