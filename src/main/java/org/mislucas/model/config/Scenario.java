@@ -30,11 +30,22 @@ public enum Scenario {
             new int[] {160_000, 240_000, 320_000},
             new int[] {20_000, 24_000, 40_000, 32_000, 32_000, 40_000, 40_000, 0});
 
+    /** The scenario name in English. */
     private final String displayName;
+
+    /** The scenario name in Spanish. */
     private final String spanishName;
+
+    /** The allowance granted at the start of each week, in COP. */
     private final int weeklyAllowance;
+
+    /** The fixed expense charged in weeks one and five, in COP. */
     private final int fixedExpense;
+
+    /** Goal prices keyed by goal type. */
     private final Map<Goal, Integer> goalPrices;
+
+    /** Card amounts keyed by card kind. */
     private final Map<CardKind, Integer> cardAmounts;
 
     /**

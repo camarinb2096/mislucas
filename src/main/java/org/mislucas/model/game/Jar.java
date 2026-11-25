@@ -6,7 +6,10 @@ import java.util.Objects;
  * Holds the balance of a spending, goal, or cushion jar.
  */
 public final class Jar {
+    /** Identifies whether this is the Spending, Goal, or Cushion jar. */
     private final JarType type;
+
+    /** Current nonnegative balance in whole Colombian pesos. */
     private Money balance = new Money(0);
 
     /**

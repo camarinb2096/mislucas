@@ -10,7 +10,10 @@ import java.util.Objects;
  * the quiet week). The game applies the effect when resolving the card.</p>
  */
 public final class Card {
+    /** The kind that determines how the game resolves this card. */
     private final CardKind kind;
+
+    /** The scenario-specific amount in whole Colombian pesos. */
     private final int amount;
 
     /**
@@ -61,6 +64,13 @@ public final class Card {
         return amount;
     }
 
+    /**
+     * {@inheritDoc}
+     * Two cards are equal when both their kind and amount match.
+     *
+     * @param other the object to compare
+     * @return true if the other object is an equal card
+     */
     @Override
     public boolean equals(Object other) {
         if (this == other) {
@@ -73,11 +83,23 @@ public final class Card {
         return kind == card.kind && amount == card.amount;
     }
 
+    /**
+     * {@inheritDoc}
+     * The hash is based on the card kind and amount.
+     *
+     * @return the card's hash code
+     */
     @Override
     public int hashCode() {
         return Objects.hash(kind, amount);
     }
 
+    /**
+     * {@inheritDoc}
+     * The returned text contains the card name and amount.
+     *
+     * @return a display string for this card
+     */
     @Override
     public String toString() {
         return kind.getDisplayName() + " (COP " + amount + ")";

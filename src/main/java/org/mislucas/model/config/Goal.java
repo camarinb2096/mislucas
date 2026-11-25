@@ -14,6 +14,7 @@ public enum Goal {
     /** Class trip goal. */
     CLASS_TRIP("Viaje de curso");
 
+    /** The localized name shown for this goal. */
     private final String displayName;
 
     /**

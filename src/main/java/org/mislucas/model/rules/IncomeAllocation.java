@@ -13,8 +13,13 @@ public final class IncomeAllocation {
      */
     private static final int ALLOCATION_INCREMENT = 1_000;
 
+    /** Jar that receives the spending allocation. */
     private final Jar spending;
+
+    /** Jar that receives the savings-goal allocation. */
     private final Jar goal;
+
+    /** Jar that receives the emergency-reserve allocation. */
     private final Jar cushion;
 
     /**
