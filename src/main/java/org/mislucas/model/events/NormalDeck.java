@@ -16,6 +16,7 @@ public final class NormalDeck {
     /** Number of cards in the Normal deck (one per week). */
     public static final int SIZE = CardKind.values().length;
 
+    /** Prevents instantiation of this deck factory. */
     private NormalDeck() {
     }
 
