@@ -9,6 +9,7 @@ public final class GameParameters {
      */
     public static final int WEEKS_PER_GAME = 8;
 
+    /** Prevents instantiation of this constants class. */
     private GameParameters() {
     }
 }
