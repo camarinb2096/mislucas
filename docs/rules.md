@@ -51,6 +51,10 @@ When a fixed expense, need, or emergency creates a shortfall, the player chooses
 
 Round the interest to the nearest whole peso, with ties rounded up. If the total in pesos is odd, round the first installment down and assign the remaining peso to the second. Collect installments by their original due week, starting with the oldest. For installments with the same due week, collect the older debt first. A partial payment reduces the debt. Attempt to collect the unpaid part the following week without adding interest. Installments due after week 8 still count as debt at closing. Explain the financed amount, interest, and payment weeks to the player. **Example:** financing COP 8,000 costs COP 8,000 in one installment or COP 8,800 in two installments of COP 4,400.
 
+## Savings returns
+
+At the end of weeks 4 and 8, credit each eligible jar using its balance after all weekly payments and card effects. Record the sum of the two rounded credits as returns received. The week-4 credit remains in the jar and can contribute to the week-8 balance. A balance of COP 2,499 earns COP 0 after rounding, while a balance of COP 2,500 earns COP 100.
+
 ## Closing and outcome
 
 After the week-8 return, pay outstanding debt from Goal until that jar is exhausted. Display any remainder as a **separate negative debt amount**; jars stay at zero or above.
