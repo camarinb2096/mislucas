@@ -1,11 +1,15 @@
 package org.mislucas.model.game;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.List;
 import java.util.Objects;
 import org.mislucas.model.config.GameParameters;
 import org.mislucas.model.config.Goal;
 import org.mislucas.model.config.Scenario;
 import org.mislucas.model.events.Card;
+import org.mislucas.model.events.CardKind;
+import org.mislucas.model.events.CardType;
 import org.mislucas.model.events.NormalDeck;
 import org.mislucas.model.rules.CreditAccount;
 import org.mislucas.model.rules.CreditPlan;
@@ -52,9 +56,19 @@ public final class Game {
     private Money pendingShortfall = new Money(0);
 
     /**
-     * The weekly cards, in reveal order.
+     * The phase to resume after the pending expense is financed.
      */
-    private final List<Card> deck;
+    private GamePhase phaseAfterFinancing;
+
+    /**
+     * The remaining weekly cards, in reveal order.
+     */
+    private final Deque<Card> deck;
+
+    /**
+     * The weekly card while it still requires a decision or payment.
+     */
+    private Card revealedCard;
 
     /**
      * The current week, starting at one and remaining at eight after closing.
@@ -67,16 +81,40 @@ public final class Game {
     private GamePhase phase = GamePhase.AWAITING_ALLOCATION;
 
     /**
-     * Starts a new game with empty jars and the Normal cards in table order.
+     * Starts a new game with empty jars and a shuffled Normal deck.
      *
      * @param scenario the selected resource scenario
      * @param goal the selected savings goal
      * @throws NullPointerException if the scenario or goal is null
      */
     public Game(Scenario scenario, Goal goal) {
+        this(scenario, goal, new ArrayDeque<>(NormalDeck.shuffledCardsFor(scenario)));
+    }
+
+    /**
+     * Starts a new game with a reproducible Normal deck order.
+     *
+     * @param scenario the selected resource scenario
+     * @param goal the selected savings goal
+     * @param cardOrder exactly one of each Normal card kind in reveal order
+     * @throws NullPointerException if the scenario, goal, order, or a kind is null
+     * @throws IllegalArgumentException if the order is not a permutation of the Normal cards
+     */
+    public Game(Scenario scenario, Goal goal, List<CardKind> cardOrder) {
+        this(scenario, goal, new ArrayDeque<>(NormalDeck.cardsFor(scenario, cardOrder)));
+    }
+
+    /**
+     * Creates a game that owns the supplied queue of Normal cards.
+     *
+     * @param scenario the selected resource scenario
+     * @param goal the selected savings goal
+     * @param deck the cards in reveal order
+     */
+    private Game(Scenario scenario, Goal goal, Deque<Card> deck) {
         this.scenario = Objects.requireNonNull(scenario, "scenario");
         this.goal = Objects.requireNonNull(goal, "goal");
-        deck = NormalDeck.cardsFor(scenario);
+        this.deck = deck;
     }
 
     /**
@@ -178,13 +216,62 @@ public final class Game {
     public MandatoryPayment chargeFixedExpense() {
         requirePhase(GamePhase.AWAITING_FIXED_EXPENSE);
         MandatoryPayment payment = expensePayment.chargeFixedExpense(week, new Money(scenario.getFixedExpense()));
-        pendingShortfall = payment.shortfall();
-        phase = pendingShortfall.pesos() > 0 ? GamePhase.AWAITING_FINANCING : GamePhase.AWAITING_CARD;
+        advanceAfterMandatoryPayment(payment, GamePhase.AWAITING_CARD);
         return payment;
     }
 
     /**
-     * Finances the pending fixed-expense shortfall and enables card reveal.
+     * Accepts or declines a want and completes the card's resolution.
+     *
+     * @param accept whether the player wants to buy the item
+     * @return true if the purchase was accepted and paid, otherwise false
+     * @throws IllegalStateException if the game is not awaiting a want decision
+     */
+    public boolean decideWant(boolean accept) {
+        requirePhase(GamePhase.AWAITING_WANT_DECISION);
+        boolean purchased = accept && expensePayment.tryPayWant(new Money(revealedCard.getAmount()));
+        revealedCard = null;
+        phase = GamePhase.AWAITING_WEEK_END;
+        return purchased;
+    }
+
+    /**
+     * Pays a need or emergency and requires financing for any unpaid amount.
+     *
+     * @return the remaining shortfall and the amount paid from Goal
+     * @throws IllegalStateException if the game is not awaiting a mandatory card payment
+     */
+    public MandatoryPayment payMandatoryCard() {
+        requirePhase(GamePhase.AWAITING_MANDATORY_PAYMENT);
+        Money amount = new Money(revealedCard.getAmount());
+        MandatoryPayment payment = revealedCard.getType() == CardType.NEED
+                ? expensePayment.payNeed(amount)
+                : expensePayment.payEmergency(amount);
+        revealedCard = null;
+        advanceAfterMandatoryPayment(payment, GamePhase.AWAITING_WEEK_END);
+        return payment;
+    }
+
+    /**
+     * Allocates the full opportunity income and completes the card's resolution.
+     * A rejected allocation preserves the balances and phase.
+     *
+     * @param spendingAmount the amount assigned to Spending
+     * @param goalAmount the amount assigned to Goal
+     * @param cushionAmount the amount assigned to Cushion
+     * @throws IllegalStateException if the game is not awaiting opportunity allocation
+     * @throws IllegalArgumentException if the amounts violate the allocation rules
+     * @throws NullPointerException if an amount is null
+     */
+    public void allocateOpportunity(Money spendingAmount, Money goalAmount, Money cushionAmount) {
+        requirePhase(GamePhase.AWAITING_OPPORTUNITY_ALLOCATION);
+        incomeAllocation.apply(new Money(revealedCard.getAmount()), spendingAmount, goalAmount, cushionAmount);
+        revealedCard = null;
+        phase = GamePhase.AWAITING_WEEK_END;
+    }
+
+    /**
+     * Finances a mandatory shortfall and resumes the turn after that payment.
      *
      * @param plan the chosen repayment option
      * @return the principal, interest, and installments for the financed expense
@@ -196,20 +283,29 @@ public final class Game {
         requirePhase(GamePhase.AWAITING_FINANCING);
         Debt debt = creditAccount.finance(week, pendingShortfall, plan);
         pendingShortfall = new Money(0);
-        phase = GamePhase.AWAITING_CARD;
+        phase = phaseAfterFinancing;
+        phaseAfterFinancing = null;
         return debt;
     }
 
     /**
-     * Reveals the card for the current week and enables the turn to close.
+     * Consumes the next weekly card and enables the action required by its type.
      *
      * @return the weekly card data
      * @throws IllegalStateException if the game is not awaiting a card
      */
     public Card revealCard() {
         requirePhase(GamePhase.AWAITING_CARD);
-        Card card = deck.get(week - 1);
-        phase = GamePhase.AWAITING_WEEK_END;
+        Card card = deck.removeFirst();
+        phase = switch (card.getType()) {
+            case WANT -> GamePhase.AWAITING_WANT_DECISION;
+            case NEED, EMERGENCY -> GamePhase.AWAITING_MANDATORY_PAYMENT;
+            case OPPORTUNITY -> GamePhase.AWAITING_OPPORTUNITY_ALLOCATION;
+            case QUIET_WEEK -> GamePhase.AWAITING_WEEK_END;
+        };
+        if (phase != GamePhase.AWAITING_WEEK_END) {
+            revealedCard = card;
+        }
         return card;
     }
 
@@ -235,6 +331,22 @@ public final class Game {
      */
     private GamePhase phaseAfterInstallments() {
         return ExpensePayment.isFixedExpenseDue(week) ? GamePhase.AWAITING_FIXED_EXPENSE : GamePhase.AWAITING_CARD;
+    }
+
+    /**
+     * Advances after a mandatory payment or records the unpaid amount for financing.
+     *
+     * @param payment the result from paying out of the jars
+     * @param nextPhase the phase to resume when the full cost is covered
+     */
+    private void advanceAfterMandatoryPayment(MandatoryPayment payment, GamePhase nextPhase) {
+        if (payment.shortfall().pesos() == 0) {
+            phase = nextPhase;
+        } else {
+            pendingShortfall = payment.shortfall();
+            phaseAfterFinancing = nextPhase;
+            phase = GamePhase.AWAITING_FINANCING;
+        }
     }
 
     /**
