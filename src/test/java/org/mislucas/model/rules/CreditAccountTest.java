@@ -125,6 +125,34 @@ class CreditAccountTest {
     }
 
     @Test
+    void settlesFutureInstallmentsFromGoalOnlyAndKeepsTheUnpaidPortion() {
+        Debt debt = account.finance(8, new Money(8_000), CreditPlan.TWO_INSTALLMENTS);
+        goal.deposit(new Money(6_000));
+        spending.deposit(new Money(12_000));
+        cushion.deposit(new Money(2_000));
+
+        assertEquals(new Money(6_000), account.settleFromGoal());
+
+        assertEquals(new Money(0), goal.balance());
+        assertEquals(new Money(12_000), spending.balance());
+        assertEquals(new Money(2_000), cushion.balance());
+        assertEquals(new Money(0), debt.installments().getFirst().remaining());
+        assertEquals(new Money(2_800), debt.installments().getLast().remaining());
+        assertEquals(new Money(2_800), account.outstandingBalance());
+    }
+
+    @Test
+    void stopsSettlingWhenTheDebtIsFullyPaid() {
+        account.finance(8, new Money(1_000), CreditPlan.ONE_INSTALLMENT);
+        goal.deposit(new Money(41_000));
+
+        assertEquals(new Money(1_000), account.settleFromGoal());
+        assertEquals(new Money(0), account.settleFromGoal());
+        assertEquals(new Money(40_000), goal.balance());
+        assertEquals(new Money(0), account.outstandingBalance());
+    }
+
+    @Test
     void rejectsInvalidFinancingWithoutAddingDebt() {
         assertThrows(IllegalArgumentException.class, () -> account.finance(0, new Money(8_000), CreditPlan.ONE_INSTALLMENT));
         assertThrows(IllegalArgumentException.class, () -> account.finance(2, new Money(0), CreditPlan.ONE_INSTALLMENT));

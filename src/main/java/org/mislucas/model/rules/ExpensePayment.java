@@ -100,6 +100,16 @@ public final class ExpensePayment {
     }
 
     /**
+     * Pays as much of an outstanding installment as Goal can cover at closing.
+     *
+     * @param amount the amount still owed
+     * @return the amount withdrawn from Goal
+     */
+    int settleFromGoal(Money amount) {
+        return withdrawUpTo(goal, amount.pesos());
+    }
+
+    /**
      * Pays an emergency using Cushion, Spending, then Goal.
      *
      * @param amount the cost of the emergency

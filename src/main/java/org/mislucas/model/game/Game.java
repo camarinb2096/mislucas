@@ -11,10 +11,12 @@ import org.mislucas.model.events.Card;
 import org.mislucas.model.events.CardKind;
 import org.mislucas.model.events.CardType;
 import org.mislucas.model.events.NormalDeck;
+import org.mislucas.model.result.GameResult;
 import org.mislucas.model.rules.CreditAccount;
 import org.mislucas.model.rules.CreditPlan;
 import org.mislucas.model.rules.Debt;
 import org.mislucas.model.rules.ExpensePayment;
+import org.mislucas.model.rules.GameOutcome;
 import org.mislucas.model.rules.IncomeAllocation;
 import org.mislucas.model.rules.MandatoryPayment;
 import org.mislucas.model.rules.ReturnCredit;
@@ -85,6 +87,21 @@ public final class Game {
      * The current stage of the turn.
      */
     private GamePhase phase = GamePhase.AWAITING_ALLOCATION;
+
+    /**
+     * The total allowances and opportunity income successfully allocated.
+     */
+    private long receivedIncomePesos;
+
+    /**
+     * Whether Goal has been used for a mandatory expense or an installment.
+     */
+    private boolean usedGoalForPayments;
+
+    /**
+     * The immutable outcome captured after the last week's return and credit settlement.
+     */
+    private GameResult result;
 
     /**
      * Starts a new game with empty jars and a shuffled Normal deck.
@@ -193,6 +210,17 @@ public final class Game {
     }
 
     /**
+     * Returns the result after the last week is closed.
+     *
+     * @return the final balances and outcome
+     * @throws IllegalStateException if the game is still in progress
+     */
+    public GameResult result() {
+        requirePhase(GamePhase.FINISHED);
+        return result;
+    }
+
+    /**
      * Allocates the full weekly allowance and enables the next scheduled action.
      * A rejected allocation preserves the balances and phase.
      *
@@ -205,7 +233,7 @@ public final class Game {
      */
     public void allocateAllowance(Money spendingAmount, Money goalAmount, Money cushionAmount) {
         requirePhase(GamePhase.AWAITING_ALLOCATION);
-        incomeAllocation.apply(new Money(scenario.getWeeklyAllowance()), spendingAmount, goalAmount, cushionAmount);
+        allocateIncome(new Money(scenario.getWeeklyAllowance()), spendingAmount, goalAmount, cushionAmount);
         phase = creditAccount.hasDueInstallments(week) ? GamePhase.AWAITING_INSTALLMENTS : phaseAfterInstallments();
     }
 
@@ -218,6 +246,7 @@ public final class Game {
     public Money collectInstallments() {
         requirePhase(GamePhase.AWAITING_INSTALLMENTS);
         Money paidFromGoal = creditAccount.collectDueInstallments(week);
+        usedGoalForPayments |= paidFromGoal.pesos() > 0;
         phase = phaseAfterInstallments();
         return paidFromGoal;
     }
@@ -280,7 +309,7 @@ public final class Game {
      */
     public void allocateOpportunity(Money spendingAmount, Money goalAmount, Money cushionAmount) {
         requirePhase(GamePhase.AWAITING_OPPORTUNITY_ALLOCATION);
-        incomeAllocation.apply(new Money(revealedCard.getAmount()), spendingAmount, goalAmount, cushionAmount);
+        allocateIncome(new Money(revealedCard.getAmount()), spendingAmount, goalAmount, cushionAmount);
         revealedCard = null;
         phase = GamePhase.AWAITING_WEEK_END;
     }
@@ -326,7 +355,7 @@ public final class Game {
 
     /**
      * Credits scheduled returns and closes the current week.
-     * The last week completes the game.
+     * The last week also settles debt from Goal and records the result.
      *
      * @throws IllegalStateException if the game is not ready to close the week
      * @throws ArithmeticException if a credited balance or the total return exceeds the integer range
@@ -335,11 +364,28 @@ public final class Game {
         requirePhase(GamePhase.AWAITING_WEEK_END);
         returnCredit.apply(week);
         if (week == GameParameters.WEEKS_PER_GAME) {
+            Money settledFromGoal = creditAccount.settleFromGoal();
+            result = GameOutcome.calculate(scenario, goal, spending.balance(), goalJar.balance(), cushion.balance(),
+                    creditAccount.outstandingBalance(), receivedIncomePesos + returnCredit.total().pesos(),
+                    usedGoalForPayments || settledFromGoal.pesos() > 0);
             phase = GamePhase.FINISHED;
         } else {
             week++;
             phase = GamePhase.AWAITING_ALLOCATION;
         }
+    }
+
+    /**
+     * Allocates income and counts it once after the operation succeeds.
+     *
+     * @param income the allowance or opportunity income
+     * @param spendingAmount the amount assigned to Spending
+     * @param goalAmount the amount assigned to Goal
+     * @param cushionAmount the amount assigned to Cushion
+     */
+    private void allocateIncome(Money income, Money spendingAmount, Money goalAmount, Money cushionAmount) {
+        incomeAllocation.apply(income, spendingAmount, goalAmount, cushionAmount);
+        receivedIncomePesos += income.pesos();
     }
 
     /**
@@ -358,6 +404,7 @@ public final class Game {
      * @param nextPhase the phase to resume when the full cost is covered
      */
     private void advanceAfterMandatoryPayment(MandatoryPayment payment, GamePhase nextPhase) {
+        usedGoalForPayments |= payment.paidFromGoal().pesos() > 0;
         if (payment.shortfall().pesos() == 0) {
             phase = nextPhase;
         } else {

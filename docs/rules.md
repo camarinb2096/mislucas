@@ -62,6 +62,6 @@ After the week-8 return, pay outstanding debt from Goal until that jar is exhaus
 - **Final net balance** = Spending + Goal + Cushion − remaining debt. A negative value means defeat.
 - **Victory** requires Goal to cover the chosen price after debt settlement and a nonnegative final net balance.
 - **Stars:** 0 without victory; 1 for victory; 2 if Goal was never used for mandatory expenses or installments; 3 if Cushion also ends with at least one weekly allowance for the chosen scenario. Using Goal for final debt settlement also prevents the second star.
-- **Savings percentage** = (final Goal balance + final Cushion balance) ÷ (allowances + opportunities + returns received) × 100. The denominator includes returns by team decision.
+- **Savings percentage** = (final Goal balance + final Cushion balance) ÷ (allowances + opportunities + returns received) × 100. The denominator includes returns by team decision. Round the percentage to two decimal places, with ties rounded up.
 
 Checkable examples: 2% of COP 7,500 is COP 150, rounded to a COP 200 credit. If all three jars end at COP 0 and COP 2,000 of debt remains, the final net balance is −COP 2,000 and the player loses.
