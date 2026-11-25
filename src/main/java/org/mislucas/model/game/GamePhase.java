@@ -10,9 +10,19 @@ public enum GamePhase {
     AWAITING_ALLOCATION,
 
     /**
+     * Installments must be collected before this week's other expenses.
+     */
+    AWAITING_INSTALLMENTS,
+
+    /**
      * The scheduled fixed expense is due before the card can be revealed.
      */
     AWAITING_FIXED_EXPENSE,
+
+    /**
+     * The player must choose how to finance a mandatory shortfall.
+     */
+    AWAITING_FINANCING,
 
     /**
      * The weekly card can be revealed.

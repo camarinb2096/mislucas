@@ -7,6 +7,9 @@ import org.mislucas.model.config.Goal;
 import org.mislucas.model.config.Scenario;
 import org.mislucas.model.events.Card;
 import org.mislucas.model.events.NormalDeck;
+import org.mislucas.model.rules.CreditAccount;
+import org.mislucas.model.rules.CreditPlan;
+import org.mislucas.model.rules.Debt;
 import org.mislucas.model.rules.ExpensePayment;
 import org.mislucas.model.rules.IncomeAllocation;
 import org.mislucas.model.rules.MandatoryPayment;
@@ -37,6 +40,16 @@ public final class Game {
      * The rule that pays expenses from these jars.
      */
     private final ExpensePayment expensePayment = new ExpensePayment(spending, goalJar, cushion);
+
+    /**
+     * The debts and installment schedule associated with this game's jars.
+     */
+    private final CreditAccount creditAccount = new CreditAccount(expensePayment);
+
+    /**
+     * The unpaid portion of the current mandatory expense awaiting financing.
+     */
+    private Money pendingShortfall = new Money(0);
 
     /**
      * The weekly cards, in reveal order.
@@ -118,6 +131,15 @@ public final class Game {
     }
 
     /**
+     * Returns financed debt still outstanding, even after the final week.
+     *
+     * @return the total remaining debt in whole pesos
+     */
+    public Money outstandingDebt() {
+        return creditAccount.outstandingBalance();
+    }
+
+    /**
      * Allocates the full weekly allowance and enables the next scheduled action.
      * A rejected allocation preserves the balances and phase.
      *
@@ -131,11 +153,24 @@ public final class Game {
     public void allocateAllowance(Money spendingAmount, Money goalAmount, Money cushionAmount) {
         requirePhase(GamePhase.AWAITING_ALLOCATION);
         incomeAllocation.apply(new Money(scenario.getWeeklyAllowance()), spendingAmount, goalAmount, cushionAmount);
-        phase = ExpensePayment.isFixedExpenseDue(week) ? GamePhase.AWAITING_FIXED_EXPENSE : GamePhase.AWAITING_CARD;
+        phase = creditAccount.hasDueInstallments(week) ? GamePhase.AWAITING_INSTALLMENTS : phaseAfterInstallments();
     }
 
     /**
-     * Charges the scenario's fixed expense once and enables the card reveal.
+     * Collects due installments before the fixed expense or card reveal.
+     *
+     * @return the amount drawn from Goal during collection
+     * @throws IllegalStateException if the game is not awaiting collection
+     */
+    public Money collectInstallments() {
+        requirePhase(GamePhase.AWAITING_INSTALLMENTS);
+        Money paidFromGoal = creditAccount.collectDueInstallments(week);
+        phase = phaseAfterInstallments();
+        return paidFromGoal;
+    }
+
+    /**
+     * Charges the scenario's fixed expense once and requires financing if funds fall short.
      *
      * @return the remaining shortfall and the amount paid from Goal
      * @throws IllegalStateException if the game is not awaiting the fixed expense
@@ -143,8 +178,26 @@ public final class Game {
     public MandatoryPayment chargeFixedExpense() {
         requirePhase(GamePhase.AWAITING_FIXED_EXPENSE);
         MandatoryPayment payment = expensePayment.chargeFixedExpense(week, new Money(scenario.getFixedExpense()));
-        phase = GamePhase.AWAITING_CARD;
+        pendingShortfall = payment.shortfall();
+        phase = pendingShortfall.pesos() > 0 ? GamePhase.AWAITING_FINANCING : GamePhase.AWAITING_CARD;
         return payment;
+    }
+
+    /**
+     * Finances the pending fixed-expense shortfall and enables card reveal.
+     *
+     * @param plan the chosen repayment option
+     * @return the principal, interest, and installments for the financed expense
+     * @throws IllegalStateException if the game is not awaiting financing
+     * @throws NullPointerException if the plan is null
+     * @throws ArithmeticException if the resulting debt exceeds the integer range
+     */
+    public Debt financeShortfall(CreditPlan plan) {
+        requirePhase(GamePhase.AWAITING_FINANCING);
+        Debt debt = creditAccount.finance(week, pendingShortfall, plan);
+        pendingShortfall = new Money(0);
+        phase = GamePhase.AWAITING_CARD;
+        return debt;
     }
 
     /**
@@ -173,6 +226,15 @@ public final class Game {
             week++;
             phase = GamePhase.AWAITING_ALLOCATION;
         }
+    }
+
+    /**
+     * Determines the next action after any due installments have been collected.
+     *
+     * @return the fixed-expense or card phase for the current week
+     */
+    private GamePhase phaseAfterInstallments() {
+        return ExpensePayment.isFixedExpenseDue(week) ? GamePhase.AWAITING_FIXED_EXPENSE : GamePhase.AWAITING_CARD;
     }
 
     /**

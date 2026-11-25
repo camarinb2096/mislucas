@@ -36,7 +36,7 @@ The Normal deck contains one card per week. Shuffle it once at game start and do
 5. In weeks 4 and 8, credit Goal and Cushion with a return of 2% of each jar's balance, rounded **separately for each jar** to the nearest COP 100; round a tie upward. Spending earns no return.
 6. Show balances, debt, and an explanation of the week's events. Close the game after week 8; no further turns are allowed.
 
-The turn model starts in week 1. It accepts one successful allowance allocation per week. In weeks 1 and 5, it charges the scenario's fixed expense once before allowing the card reveal. In other weeks, the card can be revealed immediately after allocation. The week can close after the card is revealed. A rejected action preserves the phase, week, and jar balances. Closing weeks 1 through 7 starts the next week, and closing week 8 ends the game. The current turn model uses the Normal deck's table order. Shuffling and applying card effects are tracked in T09.
+The turn model starts in week 1. It accepts one successful allowance allocation per week. If installments are due, it requires collection before the next action. In weeks 1 and 5 it then charges the scenario's fixed expense once, and a shortfall requires a financing choice before the card can be revealed. The week can close after the card is revealed. A rejected action preserves the phase, week, and jar balances. Closing weeks 1 through 7 starts the next week, and closing week 8 ends the game. The current turn model uses the Normal deck's table order. Shuffling and applying card effects are tracked in T09.
 
 A mandatory payment reduces the available balances in priority order and reports any remaining shortfall for financing. It also reports the amount drawn from Goal for the final star calculation.
 
@@ -49,7 +49,7 @@ When a fixed expense, need, or emergency creates a shortfall, the player chooses
 | One installment | The shortfall, with no interest | Following week |
 | Two installments | The shortfall plus 10% total interest, calculated once | Half in each of the next two weeks |
 
-If the total in pesos is odd, round the first installment down and assign the remaining peso to the second. A partial payment reduces the debt; attempt to collect the unpaid part the following week before newer installments, without adding interest. Installments due after week 8 still count as debt at closing. Explain the financed amount, interest, and payment weeks to the player. **Example:** financing COP 8,000 costs COP 8,000 in one installment or COP 8,800 in two installments of COP 4,400.
+Round the interest to the nearest whole peso, with ties rounded up. If the total in pesos is odd, round the first installment down and assign the remaining peso to the second. Collect installments by their original due week, starting with the oldest. For installments with the same due week, collect the older debt first. A partial payment reduces the debt. Attempt to collect the unpaid part the following week without adding interest. Installments due after week 8 still count as debt at closing. Explain the financed amount, interest, and payment weeks to the player. **Example:** financing COP 8,000 costs COP 8,000 in one installment or COP 8,800 in two installments of COP 4,400.
 
 ## Closing and outcome
 

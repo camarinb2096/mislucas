@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.mislucas.model.config.Goal;
 import org.mislucas.model.config.Scenario;
 import org.mislucas.model.events.CardKind;
+import org.mislucas.model.rules.CreditPlan;
 
 class GameTest {
     @Test
@@ -26,12 +27,31 @@ class GameTest {
         Game game = new Game(Scenario.TIGHT, Goal.HEADPHONES);
 
         assertThrows(IllegalStateException.class, game::chargeFixedExpense);
+        assertThrows(IllegalStateException.class, game::collectInstallments);
+        assertThrows(IllegalStateException.class, () -> game.financeShortfall(CreditPlan.ONE_INSTALLMENT));
         assertThrows(IllegalStateException.class, game::revealCard);
         assertThrows(IllegalStateException.class, game::finishWeek);
 
         assertEquals(1, game.week());
         assertEquals(GamePhase.AWAITING_ALLOCATION, game.phase());
         assertBalances(game, 0, 0, 0);
+    }
+
+    @Test
+    void skipsCollectionWithoutDueInstallmentsAndRejectsFinancingWithoutAShortfall() {
+        Game game = new Game(Scenario.TIGHT, Goal.HEADPHONES);
+        allocateTightAllowance(game);
+
+        assertThrows(IllegalStateException.class, game::collectInstallments);
+        assertEquals(GamePhase.AWAITING_FIXED_EXPENSE, game.phase());
+        assertBalances(game, 5_000, 3_000, 2_000);
+
+        game.chargeFixedExpense();
+
+        assertThrows(IllegalStateException.class, () -> game.financeShortfall(CreditPlan.TWO_INSTALLMENTS));
+        assertEquals(GamePhase.AWAITING_CARD, game.phase());
+        assertEquals(new Money(0), game.outstandingDebt());
+        assertBalances(game, 0, 3_000, 1_000);
     }
 
     @Test
