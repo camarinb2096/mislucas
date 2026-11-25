@@ -30,7 +30,22 @@ public enum GamePhase {
     AWAITING_CARD,
 
     /**
-     * The weekly card has been revealed and the turn can be closed.
+     * The player must accept or decline the revealed want.
+     */
+    AWAITING_WANT_DECISION,
+
+    /**
+     * The revealed need or emergency must be paid.
+     */
+    AWAITING_MANDATORY_PAYMENT,
+
+    /**
+     * The revealed opportunity income must be allocated before the week ends.
+     */
+    AWAITING_OPPORTUNITY_ALLOCATION,
+
+    /**
+     * The weekly card has been resolved and the turn can be closed.
      */
     AWAITING_WEEK_END,
 

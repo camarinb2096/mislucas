@@ -7,8 +7,7 @@ import java.util.Objects;
  *
  * <p>The amount is always nonnegative; its meaning depends on the type
  * (cost for wants, needs and emergencies; income for opportunities; zero for
- * the quiet week). This class holds data only; resolving a card belongs to
- * later tasks.</p>
+ * the quiet week). The game applies the effect when resolving the card.</p>
  */
 public final class Card {
     private final CardKind kind;
