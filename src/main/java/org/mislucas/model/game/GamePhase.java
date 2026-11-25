@@ -10,7 +10,12 @@ public enum GamePhase {
     AWAITING_ALLOCATION,
 
     /**
-     * The allowance has been allocated and the weekly card can be revealed.
+     * The scheduled fixed expense is due before the card can be revealed.
+     */
+    AWAITING_FIXED_EXPENSE,
+
+    /**
+     * The weekly card can be revealed.
      */
     AWAITING_CARD,
 

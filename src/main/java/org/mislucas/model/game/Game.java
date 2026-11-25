@@ -7,7 +7,9 @@ import org.mislucas.model.config.Goal;
 import org.mislucas.model.config.Scenario;
 import org.mislucas.model.events.Card;
 import org.mislucas.model.events.NormalDeck;
+import org.mislucas.model.rules.ExpensePayment;
 import org.mislucas.model.rules.IncomeAllocation;
+import org.mislucas.model.rules.MandatoryPayment;
 
 /**
  * Owns the state of an eight-week game and controls the order of turn actions.
@@ -30,6 +32,11 @@ public final class Game {
      * The rule that credits the weekly allowance to these jars.
      */
     private final IncomeAllocation incomeAllocation = new IncomeAllocation(spending, goalJar, cushion);
+
+    /**
+     * The rule that pays expenses from these jars.
+     */
+    private final ExpensePayment expensePayment = new ExpensePayment(spending, goalJar, cushion);
 
     /**
      * The weekly cards, in reveal order.
@@ -111,7 +118,7 @@ public final class Game {
     }
 
     /**
-     * Allocates the full weekly allowance and enables card reveal on success.
+     * Allocates the full weekly allowance and enables the next scheduled action.
      * A rejected allocation preserves the balances and phase.
      *
      * @param spendingAmount the amount assigned to Spending
@@ -124,7 +131,20 @@ public final class Game {
     public void allocateAllowance(Money spendingAmount, Money goalAmount, Money cushionAmount) {
         requirePhase(GamePhase.AWAITING_ALLOCATION);
         incomeAllocation.apply(new Money(scenario.getWeeklyAllowance()), spendingAmount, goalAmount, cushionAmount);
+        phase = ExpensePayment.isFixedExpenseDue(week) ? GamePhase.AWAITING_FIXED_EXPENSE : GamePhase.AWAITING_CARD;
+    }
+
+    /**
+     * Charges the scenario's fixed expense once and enables the card reveal.
+     *
+     * @return the remaining shortfall and the amount paid from Goal
+     * @throws IllegalStateException if the game is not awaiting the fixed expense
+     */
+    public MandatoryPayment chargeFixedExpense() {
+        requirePhase(GamePhase.AWAITING_FIXED_EXPENSE);
+        MandatoryPayment payment = expensePayment.chargeFixedExpense(week, new Money(scenario.getFixedExpense()));
         phase = GamePhase.AWAITING_CARD;
+        return payment;
     }
 
     /**
